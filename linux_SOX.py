@@ -42,7 +42,9 @@ def get_privileges(user): #przemyslec czy chcemy pokazywac klientowi NOPASSWD:AL
     legitPrivs = []
     for priv in privs:
         if "NOPASSWD" not in priv:
-            legitPrivs.append(priv.strip())
+            clean_priv = priv.strip().replace("ALL", "").strip()  # Remove "ALL" and trim spaces
+            if clean_priv:
+                legitPrivs.append(clean_priv)
     return ' '.join(legitPrivs)
  
 def save_to_csv(writeMode, filename, data):
