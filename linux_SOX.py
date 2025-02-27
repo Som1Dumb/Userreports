@@ -3,6 +3,8 @@
 import subprocess
 import csv
 import sys
+import os
+
 def getDate():
     return subprocess.run(["date", "-u", "+%FT%TZ"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True).stdout.strip()
  
@@ -23,7 +25,15 @@ def get_Platform():
  
 def get_UID(user):
     return subprocess.run(["id", "-u", user], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True).stdout.strip()
- 
+
+def check_oracle_db():
+    """Detects if OracleDB is installed by checking common locations"""
+    oracle_paths = ["/etc/oratab", "/u01/app/oracle", "/usr/lib/oracle", "/opt/oracle"]
+    for path in oracle_paths:
+        if os.path.exists(path):
+            return True
+    return False
+
 def get_lastLogin(user):
     output = subprocess.run(["lastlog", "-u", user], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True).stdout.strip()
     last = ' '.join(''.join(output).split('\n')[1].split(' ')[-6:]).strip()
@@ -102,6 +112,12 @@ def main():
     else:
         if flag == "-dry":
             print("It's only dry run. No data is saved.")
+    # Check for OracleDB and execute the query if found
+    if check_oracle_db():
+        print("OracleDB detected.")
+    else:
+        print("OracleDB not detected.")
+
  
 if __name__ == "__main__":
     main()
