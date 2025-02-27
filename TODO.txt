@@ -1,0 +1,8 @@
+Podsumowanie
+– descirption do windows’a
+– ma nie być w privilages „all” z Linuxa 
+– MSSQL testować na AMREST 
+– OracleDB wybrać serwer i na nim testować w AMREST
+– UPEWNIC SIE ZE SQL NIE USUWAJA NIC
+– jeszcze żeby zamieniał plik na nowy a starego ma nie być 
+– Dodać sprawdzenie czy jest db zainstalowane (po sql)
