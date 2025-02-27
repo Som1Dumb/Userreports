@@ -6,3 +6,6 @@ Podsumowanie
 – UPEWNIC SIE ZE SQL NIE USUWAJA NIC
 – jeszcze żeby zamieniał plik na nowy a starego ma nie być 
 – Dodać sprawdzenie czy jest db zainstalowane (po sql)
+
+#example usage of OracleDB.py
+python3 OracleDB.py --db_user myuser --db_password mypass --db_host myhost --db_service myservice  
