@@ -48,6 +48,15 @@ def get_lastLogin(user):
     except Exception as e:
         return f"Error: {str(e)}"
 
+# Get User Description (NEW)
+def get_user_description(user):
+    try:
+        description_output = subprocess.run(["wmic", "useraccount", "where", f"name='{user}'", "get", "Description"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        lines = description_output.stdout.strip().split("\n")
+        return lines[1].strip() if len(lines) > 1 else "No Description"
+    except Exception as e:
+        return f"Error: {str(e)}"
+
 # Check if User is Active or Disabled
 def get_account_status(user):
     try:
@@ -118,7 +127,7 @@ def get_user_groups(user):
 
 # Save collected data to CSV
 def save_to_csv(data, filename="windows_user_info.csv"):
-    headers = ["Hostname","Platform","Username", "User ID (SID)", "Last Login", "Account Status", "User Groups", "Priveleges", "Last Password Change"]
+    headers = ["Hostname","Platform","Username", "User ID (SID)", "Last Login", "Account Status", "User Groups", "Priveleges", "Last Password Change","Description"]
     with open(filename, mode="w", newline="") as file:
         writer = csv.writer(file)
         writer.writerow(headers)
@@ -141,7 +150,8 @@ def main():
         groups = get_user_groups(user)
         privileges = get_user_privileges(user)
         password=get_last_password_change(user)
-        user_data.append([hostname, os_platform, user, uid, last_login, status, groups, privileges, password])
+        description=get_user_description(user)
+        user_data.append([hostname, os_platform, user, uid, last_login, status, groups, privileges, password, description])
 
     # Print summary
     print(f"OS: {os_platform}")
