@@ -18,7 +18,7 @@ CREATE TABLE #UserAudit (
     LastLoginTime DATETIME NULL,
     AccountStatus NVARCHAR(50),
     DefaultDatabase NVARCHAR(255),
-    ServerRoles NVARCHAR(MAX)  -- This column must be included correctly
+    ServerRoles NVARCHAR(MAX)
 );
 
 -- Insert System and User Information into Temporary Table
@@ -38,10 +38,10 @@ INSERT INTO #UserAudit (
     ServerRoles
 )
 SELECT 
-    SERVERPROPERTY('MachineName') AS Hostname,
-    SERVERPROPERTY('Edition') AS SQLServerEdition,
-    SERVERPROPERTY('ProductVersion') AS SQLServerVersion,
-    SERVERPROPERTY('ProductLevel') AS SQLServerBuild,
+    CONVERT(NVARCHAR(255), SERVERPROPERTY('MachineName')) AS Hostname,
+    CONVERT(NVARCHAR(255), SERVERPROPERTY('Edition')) AS SQLServerEdition,
+    CONVERT(NVARCHAR(255), SERVERPROPERTY('ProductVersion')) AS SQLServerVersion,
+    CONVERT(NVARCHAR(255), SERVERPROPERTY('ProductLevel')) AS SQLServerBuild,
     @CurrentDateTime AS CurrentDateUTC,
     sp.name AS Username,
     sp.sid AS User_SID,
