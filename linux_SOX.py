@@ -60,6 +60,12 @@ def get_privileges(user): #przemyslec czy chcemy pokazywac klientowi NOPASSWD:AL
 def save_to_csv(writeMode, filename, data):
     #writeMode 'w' - write headers row to csv file
     #writeMode 'a' - append multiple data rows to csv file
+    file_path = f"{filename}.csv"
+    
+    # Check if the file exists
+    if os.path.exists(file_path):
+        print(f"File {file_path} exists. Removing it...")
+        os.remove(file_path)
     with open(filename, mode=writeMode, newline='') as file:
         writer = csv.writer(file)
         if writeMode == 'w':
@@ -79,7 +85,7 @@ def main():
  
     #name of generated csv file
     date = getDate() + ".csv"
-    fileName = '_'.join([hostname, "SOX", "report", date])
+    fileName = '_'.join([hostname, "SOX", "report"])
  
     for us in users:
         print(us + " " + get_privileges(us))#jeszcze pracuje
@@ -105,7 +111,6 @@ def main():
             row.append(get_lastLogin(user))
             row.append(get_groups(user))
             row.append(get_privileges(user))
- 
             rows.append(row) #merging user properties to single row
         save_to_csv('a', fileName, rows)
         print("Data saved in CSV file.")
