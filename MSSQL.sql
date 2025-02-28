@@ -1,7 +1,7 @@
 -- Set UTC Date Time
 DECLARE @CurrentDateTime DATETIME = GETUTCDATE();
 DECLARE @Hostname NVARCHAR(255) = CONVERT(NVARCHAR(255), SERVERPROPERTY('MachineName'));
-DECLARE @FilePath NVARCHAR(MAX) = 'C:\ExportedData\' + @Hostname + '-MSSQL.csv';
+DECLARE @FilePath NVARCHAR(255) = 'C:\ExportedData\' + @Hostname + '-MSSQL.csv';
 
 -- Create a Temporary Table to Store Results
 IF OBJECT_ID('tempdb..#UserAudit') IS NOT NULL
@@ -73,12 +73,16 @@ SELECT * FROM #UserAudit;
 
 -- Export Data to CSV using BCP
 DECLARE @SQLCmd NVARCHAR(MAX);
-DECLARE @SQLCmd_VARCHAR VARCHAR(MAX);  -- New VARCHAR variable for xp_cmdshell
+DECLARE @SQLCmd_VARCHAR VARCHAR(MAX);  -- Declare as VARCHAR for xp_cmdshell
 
-SET @SQLCmd = 'bcp "SELECT * FROM tempdb..#UserAudit" queryout "' + @FilePath + '" -c -t, -T -S ' + CONVERT(NVARCHAR(255), @@SERVERNAME);
+-- Ensure conversion to VARCHAR(MAX)
+SET @SQLCmd = 'bcp "SELECT * FROM tempdb..#UserAudit" queryout "' + @FilePath + '" -c -t, -T -S ' + CAST(@@SERVERNAME AS NVARCHAR(255));
 
--- Convert NVARCHAR(MAX) to VARCHAR(MAX) before executing xp_cmdshell
+-- Convert NVARCHAR to VARCHAR explicitly
 SET @SQLCmd_VARCHAR = CAST(@SQLCmd AS VARCHAR(MAX));
+
+-- Debugging: Print the SQL Command (Check if the command looks correct)
+PRINT @SQLCmd_VARCHAR;
 
 -- Execute the command using xp_cmdshell
 EXEC xp_cmdshell @SQLCmd_VARCHAR;
