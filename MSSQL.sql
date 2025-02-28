@@ -1,5 +1,7 @@
 -- Set UTC Date Time
 DECLARE @CurrentDateTime DATETIME = GETUTCDATE();
+DECLARE @Hostname NVARCHAR(255) = CONVERT(NVARCHAR(255), SERVERPROPERTY('MachineName'));
+DECLARE @FilePath NVARCHAR(MAX) = 'C:\ExportedData\' + @Hostname + '-MSSQL.csv';
 
 -- Create a Temporary Table to Store Results
 IF OBJECT_ID('tempdb..#UserAudit') IS NOT NULL
@@ -38,7 +40,7 @@ INSERT INTO #UserAudit (
     ServerRoles
 )
 SELECT 
-    CONVERT(NVARCHAR(255), SERVERPROPERTY('MachineName')) AS Hostname,
+    @Hostname AS Hostname,
     CONVERT(NVARCHAR(255), SERVERPROPERTY('Edition')) AS SQLServerEdition,
     CONVERT(NVARCHAR(255), SERVERPROPERTY('ProductVersion')) AS SQLServerVersion,
     CONVERT(NVARCHAR(255), SERVERPROPERTY('ProductLevel')) AS SQLServerBuild,
@@ -66,8 +68,14 @@ LEFT JOIN sys.dm_exec_sessions sl ON sp.sid = sl.security_id
 WHERE sp.type IN ('S', 'U')  -- 'S' = SQL User, 'U' = Windows User
 ORDER BY sp.name;
 
--- Check Results: Display the Data Instead of Exporting
+-- Check Results: Display the Data Before Exporting
 SELECT * FROM #UserAudit;
+
+-- Export Data to CSV using BCP
+DECLARE @SQLCmd NVARCHAR(MAX);
+SET @SQLCmd = 'bcp "SELECT * FROM tempdb..#UserAudit" queryout "' + @FilePath + '" -c -t, -T -S ' + @@SERVERNAME;
+
+EXEC xp_cmdshell @SQLCmd;
 
 -- Clean Up: Drop Temporary Table
 DROP TABLE #UserAudit;
