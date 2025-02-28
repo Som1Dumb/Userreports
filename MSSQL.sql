@@ -3,6 +3,9 @@ DECLARE @CurrentDateTime DATETIME = GETUTCDATE();
 DECLARE @Hostname NVARCHAR(255) = CONVERT(NVARCHAR(255), SERVERPROPERTY('MachineName'));
 DECLARE @FilePath NVARCHAR(255) = 'C:\ExportedData\' + @Hostname + '-MSSQL.csv';
 
+-- Ensure the directory exists
+EXEC xp_cmdshell 'IF NOT EXIST "C:\ExportedData" mkdir "C:\ExportedData"';
+
 -- Create a Temporary Table to Store Results
 IF OBJECT_ID('tempdb..#UserAudit') IS NOT NULL
     DROP TABLE #UserAudit;
@@ -73,18 +76,18 @@ SELECT * FROM #UserAudit;
 
 -- Export Data to CSV using BCP
 DECLARE @SQLCmd NVARCHAR(MAX);
-DECLARE @SQLCmd_VARCHAR VARCHAR(MAX);  -- Declare as VARCHAR for xp_cmdshell
+DECLARE @SQLCmd_VARCHAR VARCHAR(MAX);
 
--- Ensure conversion to VARCHAR(MAX)
-SET @SQLCmd = 'bcp "SELECT * FROM tempdb..#UserAudit" queryout "' + @FilePath + '" -c -t, -T -S ' + CAST(@@SERVERNAME AS NVARCHAR(255));
+-- Ensure the BCP command is properly formatted with double quotes
+SET @SQLCmd = 'bcp "SELECT * FROM tempdb..#UserAudit" queryout "' + @FilePath + '" -c -t, -T -S "' + CAST(@@SERVERNAME AS NVARCHAR(255)) + '"';
 
--- Convert NVARCHAR to VARCHAR explicitly
+-- Convert to VARCHAR
 SET @SQLCmd_VARCHAR = CAST(@SQLCmd AS VARCHAR(MAX));
 
--- Debugging: Print the SQL Command (Check if the command looks correct)
-PRINT @SQLCmd_VARCHAR;
+-- Debugging: Print the command to check if it's correct
+PRINT 'Executing Command: ' + @SQLCmd_VARCHAR;
 
--- Execute the command using xp_cmdshell
+-- Execute the BCP command
 EXEC xp_cmdshell @SQLCmd_VARCHAR;
 
 -- Clean Up: Drop Temporary Table
