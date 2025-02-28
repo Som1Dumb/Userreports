@@ -73,9 +73,10 @@ SELECT * FROM #UserAudit;
 
 -- Export Data to CSV using BCP
 DECLARE @SQLCmd NVARCHAR(MAX);
-SET @SQLCmd = 'bcp "SELECT * FROM tempdb..#UserAudit" queryout "' + @FilePath + '" -c -t, -T -S ' + @@SERVERNAME;
+SET @SQLCmd = 'bcp "SELECT * FROM tempdb..#UserAudit" queryout "' + @FilePath + '" -c -t, -T -S ' + CONVERT(NVARCHAR(255), @@SERVERNAME);
 
-EXEC xp_cmdshell @SQLCmd;
+-- Convert to VARCHAR(MAX) before executing xp_cmdshell
+EXEC xp_cmdshell CONVERT(VARCHAR(MAX), @SQLCmd);
 
 -- Clean Up: Drop Temporary Table
 DROP TABLE #UserAudit;
