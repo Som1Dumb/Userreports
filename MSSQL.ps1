@@ -27,6 +27,12 @@ if (!(Test-Path "C:\ExportedData")) {
     New-Item -ItemType Directory -Path "C:\ExportedData"
 }
 
+# If the CSV file exists, delete it
+if (Test-Path $OutputFile) {
+    Remove-Item $OutputFile -Force
+    Write-Host "Old CSV file deleted: $OutputFile"
+}
+
 # Run the SQL Query and fetch results
 try {
     $SqlResults = Invoke-Sqlcmd -ServerInstance $ServerName -Database $Database -Query $Query -TrustServerCertificate
@@ -36,7 +42,7 @@ try {
         # Export to CSV
         $SqlResults | Export-Csv -Path $OutputFile -NoTypeInformation -Encoding UTF8
         
-        Write-Host "Export successful! File saved at: $OutputFile"
+        Write-Host "Export successful! New file saved at: $OutputFile"
     } else {
         Write-Host "No data returned from SQL query."
     }
