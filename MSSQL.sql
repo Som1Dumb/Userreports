@@ -17,16 +17,26 @@ CREATE TABLE #UserAudit (
     LastModifiedDate DATETIME,
     LastLoginTime DATETIME NULL,
     AccountStatus NVARCHAR(50),
-    PasswordPolicyEnforced NVARCHAR(50),
-    PasswordExpirationEnforced NVARCHAR(50),
     DefaultDatabase NVARCHAR(255),
-    LastPasswordChangeDate DATETIME NULL,
-    AccountLockedStatus NVARCHAR(50),
-    ServerRoles NVARCHAR(MAX)
+    ServerRoles NVARCHAR(MAX)  -- This column must be included correctly
 );
 
 -- Insert System and User Information into Temporary Table
-INSERT INTO #UserAudit
+INSERT INTO #UserAudit (
+    Hostname, 
+    SQLServerEdition, 
+    SQLServerVersion, 
+    SQLServerBuild, 
+    CurrentDateUTC, 
+    Username, 
+    User_SID, 
+    CreatedDate, 
+    LastModifiedDate, 
+    LastLoginTime, 
+    AccountStatus, 
+    DefaultDatabase, 
+    ServerRoles
+)
 SELECT 
     SERVERPROPERTY('MachineName') AS Hostname,
     SERVERPROPERTY('Edition') AS SQLServerEdition,
@@ -42,37 +52,22 @@ SELECT
         WHEN sp.is_disabled = 1 THEN 'Disabled' 
         ELSE 'Active' 
     END AS AccountStatus,
-    CASE 
-        WHEN sp.is_policy_checked = 1 THEN 'Enforced' 
-        ELSE 'Not Enforced' 
-    END AS PasswordPolicyEnforced,
-    CASE 
-        WHEN sp.is_expiration_checked = 1 THEN 'Enforced' 
-        ELSE 'Not Enforced' 
-    END AS PasswordExpirationEnforced,
     sp.default_database_name AS DefaultDatabase,
-    lsd.password_last_set_time AS LastPasswordChangeDate,
-    CASE 
-        WHEN lsd.is_locked = 1 THEN 'Locked' 
-        ELSE 'Not Locked' 
-    END AS AccountLockedStatus,
-    STRING_AGG(sp2.name, ', ') AS ServerRoles
+    -- Alternative for STRING_AGG: Using STUFF with FOR XML PATH to concatenate roles
+    STUFF(
+        (SELECT ', ' + sp2.name
+         FROM sys.server_role_members srm
+         INNER JOIN sys.server_principals sp2 ON srm.role_principal_id = sp2.principal_id
+         WHERE srm.member_principal_id = sp.principal_id
+         FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 
+        1, 2, '') AS ServerRoles
 FROM sys.server_principals sp
 LEFT JOIN sys.dm_exec_sessions sl ON sp.sid = sl.security_id
-LEFT JOIN sys.server_role_members srm ON sp.principal_id = srm.member_principal_id
-LEFT JOIN sys.server_principals sp2 ON srm.role_principal_id = sp2.principal_id
-LEFT JOIN sys.sql_logins lsd ON sp.principal_id = lsd.principal_id
 WHERE sp.type IN ('S', 'U')  -- 'S' = SQL User, 'U' = Windows User
-GROUP BY sp.name, sp.sid, sp.create_date, sp.modify_date, sp.is_disabled, sl.login_time,
-         sp.is_policy_checked, sp.is_expiration_checked, sp.default_database_name,
-         lsd.password_last_set_time, lsd.is_locked
 ORDER BY sp.name;
 
--- Export Data to CSV using BCP
-DECLARE @SQLCmd NVARCHAR(MAX);
-SET @SQLCmd = 'bcp "SELECT * FROM tempdb..#UserAudit" queryout "C:\ExportedData\UserAudit.csv" -c -t, -T -S ' + @@SERVERNAME;
-
-EXEC xp_cmdshell @SQLCmd;
+-- Check Results: Display the Data Instead of Exporting
+SELECT * FROM #UserAudit;
 
 -- Clean Up: Drop Temporary Table
 DROP TABLE #UserAudit;
