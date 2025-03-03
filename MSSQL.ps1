@@ -6,12 +6,7 @@ param (
 $ServerName = "$env:COMPUTERNAME"
 
 # Attempt to get the default database dynamically
-try {
-    $Database = (Invoke-Sqlcmd -ServerInstance $ServerName -Query "SELECT name FROM sys.databases WHERE database_id = DB_ID()" -TrustServerCertificate).name
-} catch {
-    Write-Host "Error: Could not retrieve the default database. Ensure SQL Server is running and accessible."
-    exit
-}
+$Database="master"
 
 # Validate Database
 if (-not $Database) {
@@ -46,7 +41,7 @@ if (Test-Path $OutputFile) {
 
 # Run the SQL Query and fetch results
 try {
-    $SqlResults = Invoke-Sqlcmd -ServerInstance $ServerName -Database $Database -Query $Query -TrustServerCertificate
+    $SqlResults = Invoke-Sqlcmd -ServerInstance $ServerName -Database $Database -Query $Query 
 
     # Check if data was retrieved
     if ($SqlResults) {
