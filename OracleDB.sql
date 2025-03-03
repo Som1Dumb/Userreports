@@ -6,8 +6,12 @@ SET TERMOUT OFF
 SET FEEDBACK OFF
 SET COLSEP ','
 
--- Redirect output to CSV file
-SPOOL users_export.csv
+-- Get Hostname into a SQL*Plus variable
+COLUMN HOSTNAME NEW_VALUE FILENAME
+SELECT SYS_CONTEXT('USERENV', 'HOST') || '-OracleDB.csv' AS HOSTNAME FROM DUAL;
+
+-- Redirect output to dynamically generated filename
+SPOOL &FILENAME
 
 -- Query for User Details including Hostname
 SELECT 
