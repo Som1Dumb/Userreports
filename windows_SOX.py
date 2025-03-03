@@ -126,10 +126,10 @@ def get_user_groups(user):
         return f"Error: {str(e)}"
 
 # Save collected data to CSV
-def save_to_csv(data, hostname, filename="windows_user_info.csv" ):
+def save_to_csv(data, hostname, filename="Windows_OS_SOX.csv" ):
     headers = ["Hostname","Platform","Username", "User ID (SID)", "Last Login", "Account Status", "User Groups", "Priveleges", "Last Password Change","Description"]
     # Construct the file name
-    file_path = f"{hostname}-{filename}.csv"
+    file_path = f"{filename}.csv"
     
     # Check if the file exists
     if os.path.exists(file_path):

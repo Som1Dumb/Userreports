@@ -60,10 +60,6 @@ def get_privileges(user):
 def save_to_csv(writeMode, filename, data):
     file_path = f"{filename}"
     
-    if os.path.exists(file_path):
-        print(f"File {file_path} exists. Removing it...")
-        os.remove(file_path)
-    
     with open(file_path, mode=writeMode, newline='') as file:
         writer = csv.writer(file)
         if writeMode == 'w':
@@ -71,6 +67,12 @@ def save_to_csv(writeMode, filename, data):
         else:
             writer.writerows(data)
 
+def delete_existing(filename):
+        file_path = f"{filename}"
+        if os.path.exists(file_path):
+            print(f"File {file_path} exists. Removing it...")
+            os.remove(file_path)
+            
 def get_description(user):
     cmd = ''.join(["cat /etc/passwd | grep -w \"", user, "\" | awk -F: '{print $5}'"])
     description = subprocess.check_output(cmd, shell=True, universal_newlines=True).strip()
@@ -81,13 +83,14 @@ def main():
     users = get_users()
     platform = get_Platform()
  
-    fileName = f"{hostname}-LinuxSOX.csv"
+    fileName = f"Linux_OS_SOX.csv"
     
     header = ["hostname", "platform", "user", "uid", "description", "password locked", "last login", "groups", "privileges"]
  
     try:
         flag = sys.argv[1]
     except:
+        delete_existing(fileName)
         print("Gathering data...")
         save_to_csv('w', fileName, header)
         rows = []

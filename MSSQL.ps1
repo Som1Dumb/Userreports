@@ -26,7 +26,7 @@ if (!(Test-Path $QueryFile)) {
 $Query = Get-Content -Path $QueryFile -Raw
 
 # Define output file (CSV)
-$OutputFile = "C:\ExportedData\$ServerName-MSSQL.csv"
+$OutputFile = "C:\ExportedData\Windows_MSSQL_SOX.csv"
 
 # Ensure the ExportedData directory exists
 if (!(Test-Path "C:\ExportedData")) {
