@@ -1,14 +1,25 @@
 param (
-    [string]$ServerName,  # SQL Server instance
-    [string]$Database,    # Database name
     [string]$QueryFile = "MSSQL.sql"  # Default SQL query file
 )
 
-# Validate Parameters
-if (-not $ServerName -or -not $Database) {
-    Write-Host "Usage: .\Export-SQLDataToCSV.ps1 -ServerName YourServer -Database YourDatabase [-QueryFile YourSQLFile.sql]"
+# Auto-detect the Server Name (assumes default instance)
+$ServerName = "$env:COMPUTERNAME"
+
+# Attempt to get the default database dynamically
+try {
+    $Database = (Invoke-Sqlcmd -ServerInstance $ServerName -Query "SELECT name FROM sys.databases WHERE database_id = DB_ID()" -TrustServerCertificate).name
+} catch {
+    Write-Host "Error: Could not retrieve the default database. Ensure SQL Server is running and accessible."
     exit
 }
+
+# Validate Database
+if (-not $Database) {
+    Write-Host "Error: No default database found on server '$ServerName'."
+    exit
+}
+
+Write-Host "Using Server: $ServerName, Database: $Database"
 
 # Ensure the SQL query file exists
 if (!(Test-Path $QueryFile)) {
@@ -20,7 +31,7 @@ if (!(Test-Path $QueryFile)) {
 $Query = Get-Content -Path $QueryFile -Raw
 
 # Define output file (CSV)
-$OutputFile = "C:\ExportedData\$env:COMPUTERNAME-MSSQL.csv"
+$OutputFile = "C:\ExportedData\$ServerName-MSSQL.csv"
 
 # Ensure the ExportedData directory exists
 if (!(Test-Path "C:\ExportedData")) {
@@ -41,7 +52,6 @@ try {
     if ($SqlResults) {
         # Export to CSV
         $SqlResults | Export-Csv -Path $OutputFile -NoTypeInformation -Encoding UTF8
-        
         Write-Host "Export successful! New file saved at: $OutputFile"
     } else {
         Write-Host "No data returned from SQL query."
