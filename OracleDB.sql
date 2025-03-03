@@ -11,7 +11,7 @@ COLUMN HOSTNAME NEW_VALUE FILENAME
 SELECT SYS_CONTEXT('USERENV', 'HOST') || '-OracleDB.csv' AS HOSTNAME FROM DUAL;
 
 -- Define the path where the file should be saved (Modify this path as needed)
-DEFINE FILEPATH = '/home/user/oracle_exports/'  -- Change this to your desired location
+DEFINE FILEPATH = '/reports_tst/'  -- Change this to your desired location
 
 -- Show the file path before spooling
 PROMPT Exporting data to &FILEPATH&FILENAME
