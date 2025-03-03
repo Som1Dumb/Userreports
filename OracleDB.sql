@@ -6,12 +6,18 @@ SET TERMOUT OFF
 SET FEEDBACK OFF
 SET COLSEP ','
 
--- Get Hostname into a SQL*Plus variable
+-- Define the directory and file name
 COLUMN HOSTNAME NEW_VALUE FILENAME
 SELECT SYS_CONTEXT('USERENV', 'HOST') || '-OracleDB.csv' AS HOSTNAME FROM DUAL;
 
+-- Define the path where the file should be saved (Modify this path as needed)
+DEFINE FILEPATH = '/home/user/oracle_exports/'  -- Change this to your desired location
+
+-- Show the file path before spooling
+PROMPT Exporting data to &FILEPATH&FILENAME
+
 -- Redirect output to dynamically generated filename
-SPOOL &FILENAME
+SPOOL &FILEPATH&FILENAME
 
 -- Query for User Details including Hostname
 SELECT 
@@ -36,6 +42,9 @@ ORDER BY u.username;
 
 -- Stop Writing to CSV
 SPOOL OFF
+
+-- Print the file location
+PROMPT Data exported successfully to &FILEPATH&FILENAME
 
 -- Reset SQL*Plus Settings
 SET TERMOUT ON
