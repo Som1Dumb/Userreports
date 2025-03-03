@@ -6,17 +6,14 @@ SET TERMOUT OFF
 SET FEEDBACK OFF
 SET COLSEP ','
 
--- Define the directory and file name
-COLUMN HOSTNAME NEW_VALUE FILENAME
-SELECT SYS_CONTEXT('USERENV', 'HOST') || '-OracleDB.csv' AS HOSTNAME FROM DUAL;
-
--- Define the path where the file should be saved (Modify this path as needed)
+-- Define the directory where the file should be saved (Modify as needed)
 DEFINE FILEPATH = '/reports_tst/'  -- Change this to your desired location
+DEFINE FILENAME = 'Linux_OracleDB_SOX.csv'  -- Static filename
 
 -- Show the file path before spooling
 PROMPT Exporting data to &FILEPATH&FILENAME
 
--- Redirect output to dynamically generated filename
+-- Redirect output to the specified filename
 SPOOL &FILEPATH&FILENAME
 
 -- Query for User Details including Hostname
