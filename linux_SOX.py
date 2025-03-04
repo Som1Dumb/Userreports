@@ -45,14 +45,27 @@ def get_lastLogin(user):
     return last
 
 def get_privileges(user):
-    privs = subprocess.run(["sudo", "-l", "-U", user], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True).stdout.strip().split('\n')[4:]
-    legitPrivs = []
-    for priv in privs:
-        if "NOPASSWD" not in priv:
-            clean_priv = priv.strip().replace("ALL", "").strip()
-            if clean_priv:
-                legitPrivs.append(clean_priv)
-    return ' '.join(legitPrivs).replace("\n", ". ")
+    try:
+        result = subprocess.run(["sudo", "-l", "-U", user], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+        output = result.stdout.strip()
+
+        if "may run the following commands" not in output:
+            return "No sudo privileges"
+
+        privileges = []
+        lines = output.split("\n")
+        for line in lines:
+            line = line.strip()
+            if line.startswith("User") or line.startswith("Matching") or "may run the following" in line:
+                continue  # Skip irrelevant lines
+
+            if line:
+                privileges.append(line)
+
+        return ' '.join(privileges) if privileges else "No specific privileges"
+
+    except Exception as e:
+        return f"Error retrieving privileges: {e}"
 
 def get_groups(user):
     groups = subprocess.run(["groups", user], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True).stdout.strip()
