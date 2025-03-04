@@ -21,9 +21,12 @@ function Get-UID($user) {
 
 # Get Last Login Time
 function Get-LastLogin($user) {
-    $loginInfo = quser | ForEach-Object { ($_ -split '\s{2,}')[0] }
-    if ($loginInfo -contains $user) {
-        return "Currently Logged In"
+    $event = Get-WinEvent -LogName Security -MaxEvents 1000 | Where-Object {
+        $_.Id -eq 4624 -and $_.Properties[5].Value -eq $user
+    } | Select-Object -First 1
+    
+    if ($event) {
+        return $event.TimeCreated
     } else {
         return "No login info available"
     }
