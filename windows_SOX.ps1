@@ -19,11 +19,11 @@ function Get-UID($user) {
     return (Get-WmiObject Win32_UserAccount | Where-Object { $_.Name -eq $user }).SID
 }
 
-# Get Last Login Time
+# Get Last Login Time (Alternative Method)
 function Get-LastLogin($user) {
-    $lastLogon = (Get-ADUser -Identity $user -Properties LastLogonTimestamp).LastLogonTimestamp
-    if ($lastLogon) {
-        return [DateTime]::FromFileTime($lastLogon)
+    $event = Get-WinEvent -FilterHashtable @{LogName='Security'; Id=4624} -MaxEvents 50 | Where-Object { $_.Properties[5].Value -eq $user }
+    if ($event) {
+        return $event.TimeCreated
     } else {
         return "No login info available"
     }
@@ -64,11 +64,12 @@ function Get-UserPrivileges($user) {
     }
 }
 
-# Get Last Password Change
+# Get Last Password Change (Alternative Method)
 function Get-LastPasswordChange($user) {
-    $passwordInfo = (Get-ADUser -Identity $user -Properties PasswordLastSet).PasswordLastSet
+    $passwordInfo = Get-WmiObject Win32_UserAccount | Where-Object { $_.Name -eq $user } | Select-Object -ExpandProperty PasswordAge
     if ($passwordInfo) {
-        return $passwordInfo
+        $lastChange = (Get-Date).AddSeconds(-$passwordInfo)
+        return $lastChange
     } else {
         return "Unknown"
     }
