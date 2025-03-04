@@ -22,19 +22,31 @@ function Get-UID($user) {
 # Get Last Login Time
 function Get-LastLogin($user) {
     $loginInfo = quser | ForEach-Object { ($_ -split '\s{2,}')[0] }
-    return if ($loginInfo -contains $user) { "Currently Logged In" } else { "No login info available" }
+    if ($loginInfo -contains $user) {
+        return "Currently Logged In"
+    } else {
+        return "No login info available"
+    }
 }
 
 # Get User Description
 function Get-UserDescription($user) {
     $desc = (Get-WmiObject Win32_UserAccount | Where-Object { $_.Name -eq $user }).Description
-    return if ($desc) { $desc } else { "No Description" }
+    if ($null -ne $desc -and $desc -ne "") {
+        return $desc
+    } else {
+        return "No Description"
+    }
 }
 
 # Check if User is Active or Disabled
 function Get-AccountStatus($user) {
     $status = (Get-WmiObject Win32_UserAccount | Where-Object { $_.Name -eq $user }).Disabled
-    return if ($status) { "Disabled" } else { "Active" }
+    if ($status -eq $true) {
+        return "Disabled"
+    } else {
+        return "Active"
+    }
 }
 
 # Get Hostname
@@ -45,19 +57,31 @@ function Get-Hostname {
 # Get User Privileges
 function Get-UserPrivileges($user) {
     $privileges = whoami /priv | Select-String "Enabled"
-    return if ($privileges) { ($privileges -split '\s{2,}')[0] -join ", " } else { "None" }
+    if ($null -ne $privileges -and $privileges.Count -gt 0) {
+        return ($privileges -split '\s{2,}')[0] -join ", "
+    } else {
+        return "None"
+    }
 }
 
 # Get Last Password Change
 function Get-LastPasswordChange($user) {
     $passwordInfo = Get-WmiObject Win32_UserAccount | Where-Object { $_.Name -eq $user } | Select-Object -ExpandProperty PasswordLastChanged
-    return if ($passwordInfo) { $passwordInfo } else { "Unknown" }
+    if ($null -ne $passwordInfo -and $passwordInfo -ne "") {
+        return $passwordInfo
+    } else {
+        return "Unknown"
+    }
 }
 
 # Get User Group Memberships
 function Get-UserGroups($user) {
     $groups = net user $user | Select-String "\*" | ForEach-Object { ($_ -split '\s{2,}')[1] }
-    return if ($groups) { $groups -join ", " } else { "None" }
+    if ($null -ne $groups -and $groups.Count -gt 0) {
+        return $groups -join ", "
+    } else {
+        return "None"
+    }
 }
 
 # Save collected data to CSV
