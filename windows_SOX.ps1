@@ -19,12 +19,16 @@ function Get-UID($user) {
     return (Get-WmiObject Win32_UserAccount | Where-Object { $_.Name -eq $user }).SID
 }
 
-# Get Last Login Time (Alternative Method)
+# Get Last Login Time (Improved Error Handling)
 function Get-LastLogin($user) {
-    $event = Get-WinEvent -FilterHashtable @{LogName='Security'; Id=4624} -MaxEvents 50 | Where-Object { $_.Properties[5].Value -eq $user }
-    if ($event) {
-        return $event.TimeCreated
-    } else {
+    try {
+        $event = Get-WinEvent -FilterHashtable @{LogName='Security'; Id=4624} -MaxEvents 100 | Where-Object { $_.Properties[5].Value -eq $user } | Select-Object -First 1
+        if ($event) {
+            return $event.TimeCreated
+        } else {
+            return "No login info available"
+        }
+    } catch {
         return "No login info available"
     }
 }
@@ -64,13 +68,17 @@ function Get-UserPrivileges($user) {
     }
 }
 
-# Get Last Password Change (Alternative Method)
+# Get Last Password Change (Fixed Method)
 function Get-LastPasswordChange($user) {
-    $passwordInfo = Get-WmiObject Win32_UserAccount | Where-Object { $_.Name -eq $user } | Select-Object -ExpandProperty PasswordAge
-    if ($passwordInfo) {
-        $lastChange = (Get-Date).AddSeconds(-$passwordInfo)
-        return $lastChange
-    } else {
+    try {
+        $output = net user $user
+        $lastChange = ($output | Select-String "Password last set").ToString() -replace ".*Password last set\s+"
+        if ($lastChange -match "\d{2}/\d{2}/\d{4}") {
+            return [datetime]::ParseExact($lastChange, "MM/dd/yyyy", $null)
+        } else {
+            return "Unknown"
+        }
+    } catch {
         return "Unknown"
     }
 }
