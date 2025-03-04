@@ -56,6 +56,11 @@ def get_privileges(user):
             if clean_priv:
                 legitPrivs.append(clean_priv)
     return ' '.join(legitPrivs)
+
+def get_last_password_change(user):
+    cmd = f"chage -l {user} | grep 'Last password change' | awk -F': ' '{{print $2}}'"
+    last_change = subprocess.check_output(cmd, shell=True, universal_newlines=True).strip()
+    return last_change
  
 def save_to_csv(writeMode, filename, data):
     file_path = f"{filename}"
@@ -85,7 +90,7 @@ def main():
  
     fileName = f"Linux_OS_SOX.csv"
     
-    header = ["hostname", "platform", "user", "uid", "description", "password locked", "last login", "groups", "privileges"]
+    header = ["hostname", "platform", "user", "uid", "description", "password locked", "last password change", "last login", "groups", "privileges"]
  
     try:
         flag = sys.argv[1]
@@ -102,6 +107,7 @@ def main():
                 get_UID(user),
                 get_description(user),
                 get_locked_status(user),
+                get_last_password_change(user),
                 get_lastLogin(user),
                 get_groups(user),
                 get_privileges(user)
