@@ -47,7 +47,7 @@ SELECT
     sp.sid AS User_SID,
     sp.create_date AS CreatedDate,
     sp.modify_date AS LastModifiedDate,
-    sl.login_time AS LastLoginTime,
+    MAX(sl.login_time) AS LastLoginTime,
     CASE 
         WHEN sp.is_disabled = 1 THEN 'Disabled' 
         ELSE 'Active' 
@@ -63,9 +63,10 @@ SELECT
         1, 2, '') AS ServerRoles
 FROM sys.server_principals sp
 LEFT JOIN sys.dm_exec_sessions sl ON sp.sid = sl.security_id
-WHERE sp.type IN ('S', 'U')  -- 'S' = SQL User, 'U' = Windows User
+WHERE sp.type IN ('S', 'U', 'G')  -- 'S' = SQL User, 'U' = Windows User, 'G' = Windows Group
+GROUP BY 
+    sp.name, sp.sid, sp.create_date, sp.modify_date, sp.is_disabled, sp.default_database_name
 ORDER BY sp.name;
 
 -- Check Results: Display the Data Instead of Exporting
 SELECT * FROM #UserAudit;
-
