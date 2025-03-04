@@ -6,17 +6,17 @@ SET TERMOUT OFF
 SET FEEDBACK OFF
 SET COLSEP ','
 
--- Define the directory where the file should be saved (Modify as needed)
-DEFINE FILEPATH = '/reports_tst/'  -- Change this to your desired location
-DEFINE FILENAME = 'Linux_OracleDB_SOX.csv'  -- Static filename
+-- Define Filepath and Filename
+DEFINE FILEPATH = '/reports_tst/'
+DEFINE FILENAME = 'Linux_OracleDB_SOX.csv'
 
--- Show the file path before spooling
+-- Show file path before spooling
 PROMPT Exporting data to &FILEPATH&FILENAME
 
 -- Redirect output to the specified filename
 SPOOL &FILEPATH&FILENAME
 
--- Query for User Details including Hostname
+-- Query for User Details including Hostname and Domain Users
 SELECT 
     SYS_CONTEXT('USERENV', 'HOST') AS Hostname,
     u.username AS Username,
@@ -29,12 +29,15 @@ SELECT
     TO_CHAR(u.created, 'YYYY-MM-DD HH24:MI:SS') AS Created_Date,
     u.initial_rsrc_consumer_group AS Resource_Group,
     NVL(TO_CHAR(s.logon_time, 'YYYY-MM-DD HH24:MI:SS'), 'N/A') AS Last_Login_Time,
+    u.external_name AS Domain_User,  -- Domain User Information
     LISTAGG(r.granted_role, '; ') WITHIN GROUP (ORDER BY r.granted_role) AS User_Roles
 FROM dba_users u
 LEFT JOIN dba_role_privs r ON u.username = r.grantee
 LEFT JOIN v$session s ON u.username = s.username
+WHERE u.external_name IS NOT NULL OR u.username LIKE 'DOMAIN\%' -- Ensure Domain Users are Captured
 GROUP BY SYS_CONTEXT('USERENV', 'HOST'), u.username, u.user_id, u.account_status, u.lock_date, 
-         u.expiry_date, u.profile, u.default_tablespace, u.created, u.initial_rsrc_consumer_group, s.logon_time
+         u.expiry_date, u.profile, u.default_tablespace, u.created, u.initial_rsrc_consumer_group, 
+         s.logon_time, u.external_name
 ORDER BY u.username;
 
 -- Stop Writing to CSV
@@ -46,4 +49,4 @@ PROMPT Data exported successfully to &FILEPATH&FILENAME
 -- Reset SQL*Plus Settings
 SET TERMOUT ON
 SET FEEDBACK ON
-SET COLSEP ' '
+SET COLSEP ' ';
