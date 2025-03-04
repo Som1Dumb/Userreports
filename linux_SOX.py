@@ -34,19 +34,16 @@ def check_oracle_db():
             return True
     return False
 
+def get_description(user):
+    cmd = ''.join(["cat /etc/passwd | grep -w \"", user, "\" | awk -F: '{print $5}'"])
+    description = subprocess.check_output(cmd, shell=True, universal_newlines=True).strip().replace("\n", ". ")
+    return description
+
 def get_lastLogin(user):
     output = subprocess.run(["lastlog", "-u", user], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True).stdout.strip()
-    last = ' '.join(''.join(output).split('\n')[1].split(' ')[-6:]).strip()
+    last = ' '.join(''.join(output).split('\n')[1].split(' ')[-6:]).strip().replace("\n", ". ")
     return last
- 
-def get_groups(user):
-    groups = subprocess.run(["groups", user], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True).stdout.strip()
-    return groups.split(':')[1].strip()
- 
-def get_locked_status(user):
-    cmd = "passwd -S " + user + " | awk '{print $2}'"
-    return subprocess.check_output(cmd, shell=True, universal_newlines=True).strip()
- 
+
 def get_privileges(user):
     privs = subprocess.run(["sudo", "-l", "-U", user], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True).stdout.strip().split('\n')[4:]
     legitPrivs = []
@@ -55,7 +52,25 @@ def get_privileges(user):
             clean_priv = priv.strip().replace("ALL", "").strip()
             if clean_priv:
                 legitPrivs.append(clean_priv)
-    return ' '.join(legitPrivs)
+    return ' '.join(legitPrivs).replace("\n", ". ")
+
+def get_groups(user):
+    groups = subprocess.run(["groups", user], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True).stdout.strip()
+    return groups.split(':')[1].strip()
+ 
+def get_locked_status(user):
+    cmd = "passwd -S " + user + " | awk '{print $2}'"
+    return subprocess.check_output(cmd, shell=True, universal_newlines=True).strip()
+ 
+# def get_privileges(user):
+#     privs = subprocess.run(["sudo", "-l", "-U", user], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True).stdout.strip().split('\n')[4:]
+#     legitPrivs = []
+#     for priv in privs:
+#         if "NOPASSWD" not in priv:
+#             clean_priv = priv.strip().replace("ALL", "").strip()
+#             if clean_priv:
+#                 legitPrivs.append(clean_priv)
+#     return ' '.join(legitPrivs)
 
 def get_last_password_change(user):
     cmd = f"chage -l {user} | grep 'Last password change' | awk -F': ' '{{print $2}}'"
@@ -78,10 +93,10 @@ def delete_existing(filename):
             print(f"File {file_path} exists. Removing it...")
             os.remove(file_path)
             
-def get_description(user):
-    cmd = ''.join(["cat /etc/passwd | grep -w \"", user, "\" | awk -F: '{print $5}'"])
-    description = subprocess.check_output(cmd, shell=True, universal_newlines=True).strip()
-    return description
+# def get_description(user):
+#     cmd = ''.join(["cat /etc/passwd | grep -w \"", user, "\" | awk -F: '{print $5}'"])
+#     description = subprocess.check_output(cmd, shell=True, universal_newlines=True).strip()
+#     return description
  
 def main():
     hostname = subprocess.run("hostname", stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True).stdout.strip()
