@@ -23,16 +23,16 @@ is_oracle_installed() {
     return 1
 }
 
-# Function to find the Oracle user (ora+SID)
+# Function to find the Oracle user (ora+SID), but NOT "oracle"
 find_oracle_user() {
-    echo "🔹 Searching for Oracle user (oraSID)..."
-    
-    ORACLE_USER=$(awk -F: '/^ora/{print $1}' /etc/passwd | head -n 1)
+    echo "🔹 Searching for Oracle user (oraSID), excluding 'oracle' user..."
+
+    ORACLE_USER=$(awk -F: '/^ora/ {if ($1 != "oracle") print $1}' /etc/passwd | head -n 1)
 
     if [[ -n "$ORACLE_USER" ]]; then
         echo "✅ Oracle user found: $ORACLE_USER"
     else
-        echo "❌ Oracle user not found!"
+        echo "❌ No valid Oracle user found! Exiting..."
         exit 1
     fi
 }
@@ -68,7 +68,7 @@ setup_sql_script() {
 if is_oracle_installed; then
     echo "🔹 Oracle Database detected. Proceeding with script execution..."
 
-    # Find Oracle user
+    # Find Oracle user (excluding 'oracle' user)
     find_oracle_user
 
     # Setup SQL script (ownership and path)
