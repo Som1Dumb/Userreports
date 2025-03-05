@@ -35,9 +35,25 @@ find_sqlplus() {
     fi
 }
 
+# Ask user for the full path of export_users.sql
+ask_for_sql_script() {
+    while true; do
+        read -rp "🔹 Enter the full path to export_users.sql: " SQL_SCRIPT_PATH
+        if [[ -f "$SQL_SCRIPT_PATH" ]]; then
+            echo "✅ SQL script found: $SQL_SCRIPT_PATH"
+            break
+        else
+            echo "❌ File not found. Please enter a valid path."
+        fi
+    done
+}
+
 # Run only if Oracle Database is installed
 if is_oracle_installed; then
     echo "🔹 Oracle Database detected. Proceeding with script execution..."
+
+    # Ask user for the SQL script path
+    ask_for_sql_script
 
     # Print current user
     echo "🔹 Executing commands as user: $(whoami)"
@@ -58,7 +74,7 @@ if is_oracle_installed; then
         source ~/.bash_profile  # Load Oracle environment variables
         echo "🔹 Checking sqlplus path: \$(which sqlplus)"
         sqlplus / as sysdba <<SQL
-        @export_users.sql
+        @$SQL_SCRIPT_PATH
         exit;
 SQL
 EOF
