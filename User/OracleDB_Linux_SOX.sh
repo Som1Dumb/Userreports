@@ -35,24 +35,43 @@ find_sqlplus() {
     fi
 }
 
-# Ask user for the full path of export_users.sql
+# Function to parse arguments
+parse_arguments() {
+    while [[ "$#" -gt 0 ]]; do
+        case $1 in
+            -file)
+                SQL_SCRIPT_PATH="$2"
+                shift 2
+                ;;
+            *)
+                echo "❌ Unknown parameter: $1"
+                exit 1
+                ;;
+        esac
+    done
+}
+
+# Ask user for the SQL script file if not provided
 ask_for_sql_script() {
-    while true; do
+    while [[ -z "$SQL_SCRIPT_PATH" || ! -f "$SQL_SCRIPT_PATH" ]]; do
         read -rp "🔹 Enter the full path to export_users.sql: " SQL_SCRIPT_PATH
         if [[ -f "$SQL_SCRIPT_PATH" ]]; then
             echo "✅ SQL script found: $SQL_SCRIPT_PATH"
-            break
         else
             echo "❌ File not found. Please enter a valid path."
+            SQL_SCRIPT_PATH=""
         fi
     done
 }
+
+# Parse input arguments
+parse_arguments "$@"
 
 # Run only if Oracle Database is installed
 if is_oracle_installed; then
     echo "🔹 Oracle Database detected. Proceeding with script execution..."
 
-    # Ask user for the SQL script path
+    # Ask user for the SQL script path if not provided via -file flag
     ask_for_sql_script
 
     # Print current user
