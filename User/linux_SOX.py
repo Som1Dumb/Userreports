@@ -26,13 +26,13 @@ def get_Platform():
 def get_UID(user):
     return subprocess.run(["id", "-u", user], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True).stdout.strip()
 
-def check_oracle_db():
-    """Detects if OracleDB is installed by checking common locations"""
-    oracle_paths = ["/etc/oratab", "/u01/app/oracle", "/usr/lib/oracle", "/opt/oracle"]
-    for path in oracle_paths:
-        if os.path.exists(path):
-            return True
-    return False
+# def check_oracle_db():
+#     """Detects if OracleDB is installed by checking common locations"""
+#     oracle_paths = ["/etc/oratab", "/u01/app/oracle", "/usr/lib/oracle", "/opt/oracle"]
+#     for path in oracle_paths:
+#         if os.path.exists(path):
+#             return True
+#     return False
 
 def get_description(user):
     cmd = ''.join(["cat /etc/passwd | grep -w \"", user, "\" | awk -F: '{print $5}'"])
@@ -147,10 +147,6 @@ def main():
         if flag == "-dry":
             print("It's only dry run. No data is saved.")
     
-    if check_oracle_db():
-        print("OracleDB detected.")
-    else:
-        print("OracleDB not detected.")
 
 if __name__ == "__main__":
     main()
