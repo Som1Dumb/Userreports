@@ -23,56 +23,56 @@ is_oracle_installed() {
     return 1
 }
 
-# Function to check sqlplus path for oradyn user
+# Function to find the Oracle user (ora+SID)
+find_oracle_user() {
+    echo "🔹 Searching for Oracle user (oraSID)..."
+    
+    ORACLE_USER=$(awk -F: '/^ora/{print $1}' /etc/passwd | head -n 1)
+
+    if [[ -n "$ORACLE_USER" ]]; then
+        echo "✅ Oracle user found: $ORACLE_USER"
+    else
+        echo "❌ Oracle user not found!"
+        exit 1
+    fi
+}
+
+# Function to check sqlplus path for oraSID user
 find_sqlplus() {
     echo "🔹 Checking for sqlplus command..."
-    SQLPLUS_PATH=$(sudo -i -u oradyn bash -c 'which sqlplus')
+    SQLPLUS_PATH=$(sudo -i -u "$ORACLE_USER" bash -c 'which sqlplus')
 
     if [ -n "$SQLPLUS_PATH" ]; then
         echo "✅ sqlplus found at: $SQLPLUS_PATH"
     else
-        echo "❌ sqlplus command not found for oradyn"
+        echo "❌ sqlplus command not found for $ORACLE_USER"
     fi
 }
 
-# Function to parse arguments
-parse_arguments() {
-    while [[ "$#" -gt 0 ]]; do
-        case $1 in
-            -file)
-                SQL_SCRIPT_PATH="$2"
-                shift 2
-                ;;
-            *)
-                echo "❌ Unknown parameter: $1"
-                exit 1
-                ;;
-        esac
-    done
-}
+# Get the path of OracleDB.sql in the script's directory
+setup_sql_script() {
+    SCRIPT_DIR=$(dirname "$(realpath "$0")")
+    SQL_SCRIPT_PATH="$SCRIPT_DIR/OracleDB.sql"
 
-# Ask user for the SQL script file if not provided
-ask_for_sql_script() {
-    while [[ -z "$SQL_SCRIPT_PATH" || ! -f "$SQL_SCRIPT_PATH" ]]; do
-        read -rp "🔹 Enter the full path to export_users.sql: " SQL_SCRIPT_PATH
-        if [[ -f "$SQL_SCRIPT_PATH" ]]; then
-            echo "✅ SQL script found: $SQL_SCRIPT_PATH"
-        else
-            echo "❌ File not found. Please enter a valid path."
-            SQL_SCRIPT_PATH=""
-        fi
-    done
+    if [[ -f "$SQL_SCRIPT_PATH" ]]; then
+        echo "✅ SQL script found: $SQL_SCRIPT_PATH"
+        echo "🔹 Changing ownership to $ORACLE_USER"
+        chown "$ORACLE_USER" "$SQL_SCRIPT_PATH"
+    else
+        echo "❌ OracleDB.sql not found in $SCRIPT_DIR. Please place the script in the same directory."
+        exit 1
+    fi
 }
-
-# Parse input arguments
-parse_arguments "$@"
 
 # Run only if Oracle Database is installed
 if is_oracle_installed; then
     echo "🔹 Oracle Database detected. Proceeding with script execution..."
 
-    # Ask user for the SQL script path if not provided via -file flag
-    ask_for_sql_script
+    # Find Oracle user
+    find_oracle_user
+
+    # Setup SQL script (ownership and path)
+    setup_sql_script
 
     # Print current user
     echo "🔹 Executing commands as user: $(whoami)"
@@ -80,16 +80,16 @@ if is_oracle_installed; then
     # Create directory if not exists
     echo "🔹 Creating directory: /report_tst"
     mkdir -p /report_tst
-    echo "🔹 Changing ownership to oradyn"
-    chown oradyn /report_tst
+    echo "🔹 Changing ownership to $ORACLE_USER"
+    chown "$ORACLE_USER" /report_tst
 
-    # Check sqlplus for oradyn user
+    # Check sqlplus for oraSID user
     find_sqlplus
 
-    # Run sqlplus as oradyn with a full login shell
-    echo "🔹 Switching to oradyn and running sqlplus..."
-    sudo -i -u oradyn bash <<EOF
-        echo "🔹 Inside oradyn shell, user: \$(whoami)"
+    # Run sqlplus as oraSID with a full login shell
+    echo "🔹 Switching to $ORACLE_USER and running sqlplus..."
+    sudo -i -u "$ORACLE_USER" bash <<EOF
+        echo "🔹 Inside Oracle user shell, user: \$(whoami)"
         source ~/.bash_profile  # Load Oracle environment variables
         echo "🔹 Checking sqlplus path: \$(which sqlplus)"
         sqlplus / as sysdba <<SQL
