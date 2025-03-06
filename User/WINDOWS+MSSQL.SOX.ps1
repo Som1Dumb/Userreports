@@ -79,17 +79,19 @@ function Main {
 
     $user_data = @()
     foreach ($user in $users) {
-        $uid = (Get-WmiObject Win32_UserAccount | Where-Object { $_.Name -eq $user }).SID
-        $status = (Get-WmiObject Win32_UserAccount | Where-Object { $_.Name -eq $user }).Disabled ? "Disabled" : "Active"
-        
-        $user_data += [PSCustomObject]@{
-            Hostname = $hostname
-            Platform = $os_platform
-            Username = $user
-            "User ID (SID)" = $uid
-            "Account Status" = $status
-        }
+    $uid = (Get-WmiObject Win32_UserAccount | Where-Object { $_.Name -eq $user }).SID
+    $status = (Get-WmiObject Win32_UserAccount | Where-Object { $_.Name -eq $user }).Disabled
+    $status = if ($status -eq $true) { "Disabled" } else { "Active" }
+    
+    $user_data += [PSCustomObject]@{
+        Hostname = $hostname
+        Platform = $os_platform
+        Username = $user
+        "User ID (SID)" = $uid
+        "Account Status" = $status
     }
+}
+
     
     Write-Host "OS: $os_platform"
     Write-Host "Date: $timestamp"
