@@ -2,35 +2,20 @@
 SET PAGESIZE 50000
 SET LINESIZE 300
 SET TRIMSPOOL ON
-SET TERMOUT OFF
+SET TERMOUT ON
 SET FEEDBACK OFF
 SET COLSEP ','
 
--- Define Filepath and Filename
-DEFINE FILEPATH = '/reports_tst/'
-DEFINE FILENAME = 'Linux_OracleDB_SOX.csv'
+-- Define the directory where the file should be saved (Modify as needed)
+DEFINE FILENAME = 'Linux_OracleDB_SOX.csv'  -- Static filename
 
--- Show file path before spooling
-PROMPT Exporting data to &FILEPATH&FILENAME
+-- Show the file path before spooling
+PROMPT Exporting data to &FILENAME
 
 -- Redirect output to the specified filename
-SPOOL &FILEPATH&FILENAME
+SPOOL &FILENAME
 
--- Query for User Details including Hostname, Domain Users, and Privileges
-WITH user_privileges AS (
-    SELECT 
-        grantee,
-        LISTAGG(privilege, '; ') WITHIN GROUP (ORDER BY privilege) AS system_privileges
-    FROM dba_sys_privs
-    GROUP BY grantee
-),
-object_privileges AS (
-    SELECT 
-        grantee,
-        LISTAGG(privilege || ' ON ' || owner || '.' || table_name, '; ') WITHIN GROUP (ORDER BY table_name) AS object_privileges
-    FROM dba_tab_privs
-    GROUP BY grantee
-)
+-- Query for User Details including Hostname and Privileges
 SELECT 
     SYS_CONTEXT('USERENV', 'HOST') AS Hostname,
     u.username AS Username,
@@ -43,30 +28,23 @@ SELECT
     TO_CHAR(u.created, 'YYYY-MM-DD HH24:MI:SS') AS Created_Date,
     u.initial_rsrc_consumer_group AS Resource_Group,
     NVL(TO_CHAR(s.logon_time, 'YYYY-MM-DD HH24:MI:SS'), 'N/A') AS Last_Login_Time,
-    u.external_name AS Domain_User,  -- Domain User Information
     LISTAGG(r.granted_role, '; ') WITHIN GROUP (ORDER BY r.granted_role) AS User_Roles,
-    up.system_privileges AS System_Privileges,
-    op.object_privileges AS Object_Privileges,
-    -- Placeholder for User Description (Modify if there's a metadata table)
-    'N/A' AS User_Description  
+    LISTAGG(p.privilege, '; ') WITHIN GROUP (ORDER BY p.privilege) AS User_Privileges
 FROM dba_users u
 LEFT JOIN dba_role_privs r ON u.username = r.grantee
+LEFT JOIN dba_sys_privs p ON u.username = p.grantee
 LEFT JOIN v$session s ON u.username = s.username
-LEFT JOIN user_privileges up ON u.username = up.grantee
-LEFT JOIN object_privileges op ON u.username = op.grantee
-WHERE u.external_name IS NOT NULL OR u.username LIKE 'DOMAIN\%' -- Ensure Domain Users are Captured
 GROUP BY SYS_CONTEXT('USERENV', 'HOST'), u.username, u.user_id, u.account_status, u.lock_date, 
-         u.expiry_date, u.profile, u.default_tablespace, u.created, u.initial_rsrc_consumer_group, 
-         s.logon_time, u.external_name, up.system_privileges, op.object_privileges
+         u.expiry_date, u.profile, u.default_tablespace, u.created, u.initial_rsrc_consumer_group, s.logon_time
 ORDER BY u.username;
 
 -- Stop Writing to CSV
 SPOOL OFF
 
 -- Print the file location
-PROMPT Data exported successfully to &FILEPATH&FILENAME
+PROMPT Data exported successfully to &FILENAME
 
 -- Reset SQL*Plus Settings
 SET TERMOUT ON
 SET FEEDBACK ON
-SET COLSEP ' ';
+SET COLSEP ' '

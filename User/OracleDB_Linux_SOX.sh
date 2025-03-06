@@ -90,6 +90,8 @@ if is_oracle_installed; then
     echo "🔹 Switching to $ORACLE_USER and running sqlplus..."
     sudo -i -u "$ORACLE_USER" bash <<EOF
         echo "🔹 Inside Oracle user shell, user: \$(whoami)"
+        cd /report_tst/
+        echo "Current working dir: \$(pwd)
         source ~/.bash_profile  # Load Oracle environment variables
         echo "🔹 Checking sqlplus path: \$(which sqlplus)"
         sqlplus / as sysdba <<SQL
