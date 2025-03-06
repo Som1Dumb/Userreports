@@ -81,15 +81,31 @@ function Get-UserPrivileges($user) {
     if ($privileges) { return ($privileges -split '\s{2,}')[0] -join ", " } else { return "None" }
 }
 
-# Get last login timestamp
+# Get last login timestamp in human-readable format
 function Get-LastLogin($user) {
     try {
-        $event = Get-WinEvent -FilterHashtable @{LogName='Security'; Id=4624} -MaxEvents 100 | Where-Object { $_.Properties[5].Value -eq $user } | Select-Object -First 1
-        if ($event) { return $event.TimeCreated } else { return "No login info available" }
+        $domain = (Get-WmiObject Win32_ComputerSystem).Domain
+        $userVariants = @($user, "$domain\$user")  # Check both formats
+
+        # Search Security Log for Logon Event (ID 4624) excluding SYSTEM and NETWORK logins
+        $event = Get-WinEvent -FilterHashtable @{LogName='Security'; Id=4624} -MaxEvents 500 |
+                 Where-Object {
+                     ($userVariants -contains $_.Properties[5].Value -or $userVariants -contains $_.Properties[6].Value) -and
+                     ($_.Properties[8].Value -ne "127.0.0.1") # Exclude local logins like SYSTEM
+                 } |
+                 Select-Object -First 1
+
+        # Return formatted date-time if found
+        if ($event) {
+            return $event.TimeCreated.ToString("yyyy-MM-dd HH:mm:ss")
+        } else {
+            return "No login info available"
+        }
     } catch {
         return "No login info available"
     }
 }
+
 
 # Main Execution
 function Main {

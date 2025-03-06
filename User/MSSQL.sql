@@ -47,7 +47,9 @@ SELECT
     sp.sid AS User_SID,
     sp.create_date AS CreatedDate,
     sp.modify_date AS LastModifiedDate,
-    MAX(sl.login_time) AS LastLoginTime,
+    (SELECT MAX(sl.login_time) 
+     FROM sys.dm_exec_sessions sl 
+     WHERE sl.security_id = sp.sid) AS LastLoginTime,  -- Fixing aggregation issue
     CASE 
         WHEN sp.is_disabled = 1 THEN 'Disabled' 
         ELSE 'Active' 
@@ -62,10 +64,7 @@ SELECT
          FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 
         1, 2, '') AS ServerRoles
 FROM sys.server_principals sp
-LEFT JOIN sys.dm_exec_sessions sl ON sp.sid = sl.security_id
 WHERE sp.type IN ('S', 'U', 'G')  -- 'S' = SQL User, 'U' = Windows User, 'G' = Windows Group
-GROUP BY 
-    sp.name, sp.sid, sp.create_date, sp.modify_date, sp.is_disabled, sp.default_database_name
 ORDER BY sp.name;
 
 -- Check Results: Display the Data Instead of Exporting
