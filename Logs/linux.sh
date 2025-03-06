@@ -33,13 +33,19 @@ get_failed_logins() {
     echo "[INFO] Failed login extraction complete."
 }
 
-# Function to extract sudo command usage
+# Function to extract sudo command usage (fixing empty command issue)
 get_sudo_usage() {
     echo "[INFO] Extracting sudo command usage..."
     grep -i "sudo:" "$LOG_FILE" | while read -r line; do
         DATE=$(echo "$line" | awk '{print $1, $2, $3}')
         USERNAME=$(echo "$line" | grep -oP '(?<=user=)\S+')
-        COMMAND=$(echo "$line" | grep -oP '(?<=COMMAND=).*')
+        COMMAND=$(echo "$line" | awk -F'COMMAND=' '{print $2}')
+        
+        # If no command found, set "UNKNOWN"
+        if [[ -z "$COMMAND" ]]; then
+            COMMAND="UNKNOWN"
+        fi
+
         echo "$HOSTNAME,$DATE,$USERNAME,N/A,SUDO_USAGE,\"$COMMAND\"" >> "$OUTPUT_CSV"
     done
     echo "[INFO] Sudo command extraction complete."
@@ -51,7 +57,13 @@ get_runas_usage() {
     grep -i "runuser" "$LOG_FILE" | while read -r line; do
         DATE=$(echo "$line" | awk '{print $1, $2, $3}')
         USERNAME=$(echo "$line" | grep -oP '(?<=user )\S+')
-        COMMAND=$(echo "$line" | grep -oP '(?<=command: ).*')
+        COMMAND=$(echo "$line" | awk -F'command: ' '{print $2}')
+
+        # If no command found, set "UNKNOWN"
+        if [[ -z "$COMMAND" ]]; then
+            COMMAND="UNKNOWN"
+        fi
+
         echo "$HOSTNAME,$DATE,$USERNAME,N/A,RUNAS_COMMAND,\"$COMMAND\"" >> "$OUTPUT_CSV"
     done
     echo "[INFO] Runuser command extraction complete."
