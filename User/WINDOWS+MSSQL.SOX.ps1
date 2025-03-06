@@ -69,6 +69,28 @@ function Save-ToCSV($data) {
     Write-Host "Data successfully saved to $filename"
 }
 
+# Get user group memberships
+function Get-UserGroups($user) {
+    $groups = net user $user | Select-String "\*" | ForEach-Object { ($_ -split '\s{2,}')[1] }
+    if ($groups) { return $groups -join ", " } else { return "None" }
+}
+
+# Get user privileges
+function Get-UserPrivileges($user) {
+    $privileges = whoami /priv | Select-String "Enabled"
+    if ($privileges) { return ($privileges -split '\s{2,}')[0] -join ", " } else { return "None" }
+}
+
+# Get last login timestamp
+function Get-LastLogin($user) {
+    try {
+        $event = Get-WinEvent -FilterHashtable @{LogName='Security'; Id=4624} -MaxEvents 100 | Where-Object { $_.Properties[5].Value -eq $user } | Select-Object -First 1
+        if ($event) { return $event.TimeCreated } else { return "No login info available" }
+    } catch {
+        return "No login info available"
+    }
+}
+
 # Main Execution
 function Main {
     Write-Host "Collecting user information from Windows..."
@@ -79,19 +101,24 @@ function Main {
 
     $user_data = @()
     foreach ($user in $users) {
-    $uid = (Get-WmiObject Win32_UserAccount | Where-Object { $_.Name -eq $user }).SID
-    $status = (Get-WmiObject Win32_UserAccount | Where-Object { $_.Name -eq $user }).Disabled
-    $status = if ($status -eq $true) { "Disabled" } else { "Active" }
-    
-    $user_data += [PSCustomObject]@{
-        Hostname = $hostname
-        Platform = $os_platform
-        Username = $user
-        "User ID (SID)" = $uid
-        "Account Status" = $status
-    }
-}
+        $uid = (Get-WmiObject Win32_UserAccount | Where-Object { $_.Name -eq $user }).SID
+        $status = (Get-WmiObject Win32_UserAccount | Where-Object { $_.Name -eq $user }).Disabled
+        $status = if ($status -eq $true) { "Disabled" } else { "Active" }
+        $groups = Get-UserGroups $user
+        $privileges = Get-UserPrivileges $user
+        $last_login = Get-LastLogin $user
 
+        $user_data += [PSCustomObject]@{
+            Hostname = $hostname
+            Platform = $os_platform
+            Username = $user
+            "User ID (SID)" = $uid
+            "Account Status" = $status
+            "User Groups" = $groups
+            "Privileges" = $privileges
+            "Last Login" = $last_login
+        }
+    }
     
     Write-Host "OS: $os_platform"
     Write-Host "Date: $timestamp"
