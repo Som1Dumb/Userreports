@@ -1,21 +1,11 @@
 # Define Output File
 $hostname = $env:COMPUTERNAME
 $date = Get-Date -Format "yyyy-MM-dd"
-$outputFile = "C:\Logs\os_log_review_$date.csv"
+$outputFile = "os_log_review_$date.csv"
 
 Write-Host "Starting log review script on $hostname..."
 Write-Host "Output file: $outputFile"
 
-# Ensure Log Directory Exists
-if (!(Test-Path "C:\Logs")) {
-    try {
-        New-Item -ItemType Directory -Path "C:\Logs" -Force | Out-Null
-        Write-Host "Created log directory: C:\Logs"
-    } catch {
-        Write-Host "Error: Unable to create log directory. Check permissions."
-        exit
-    }
-}
 
 # Function to Check if Security Logs are Accessible
 function Check-SecurityLog {
