@@ -3,7 +3,7 @@
 # Variables
 HOSTNAME=$(hostname)
 LOG_FILE="/var/log/auth.log"  # Default for Debian/Ubuntu; changes dynamically for RHEL
-OUTPUT_CSV="$(pwd)/Linux_os_log_review.csv"
+OUTPUT_CSV="$(pwd)/Linux_os_log_review_.csv"
 
 # Function to detect OS and set the correct log file
 detect_os() {
@@ -33,13 +33,13 @@ get_failed_logins() {
     echo "[INFO] Failed login extraction complete."
 }
 
-# Function to extract sudo command usage (fixing empty command issue)
+# Function to extract sudo command usage (FULL sudo command captured)
 get_sudo_usage() {
     echo "[INFO] Extracting sudo command usage..."
-    grep -i "sudo:" "$LOG_FILE" | while read -r line; do
+    grep -i "sudo" "$LOG_FILE" | while read -r line; do
         DATE=$(echo "$line" | awk '{print $1, $2, $3}')
-        USERNAME=$(echo "$line" | grep -oP '(?<=user=)\S+')
-        COMMAND=$(echo "$line" | sed -n 's/.*sudo: //p')  # Extracts everything after "sudo:"
+        USERNAME=$(echo "$line" | grep -oP '(?<=user=)\S+' || echo "UNKNOWN")
+        COMMAND=$(echo "$line" | sed -n 's/.*sudo //p')  # Extracts everything after "sudo"
 
         # If no command found, set "UNKNOWN"
         if [[ -z "$COMMAND" ]]; then
@@ -56,8 +56,8 @@ get_runas_usage() {
     echo "[INFO] Extracting runuser (runas) command usage..."
     grep -i "runuser" "$LOG_FILE" | while read -r line; do
         DATE=$(echo "$line" | awk '{print $1, $2, $3}')
-        USERNAME=$(echo "$line" | grep -oP '(?<=user )\S+')
-        COMMAND=$(echo "$line" | sed -n 's/.*command: //p')  # Extracts everything after "command:"
+        USERNAME=$(echo "$line" | grep -oP '(?<=user )\S+' || echo "UNKNOWN")
+        COMMAND=$(echo "$line" | sed -n 's/.*runuser //p')  # Extracts everything after "runuser"
 
         # If no command found, set "UNKNOWN"
         if [[ -z "$COMMAND" ]]; then
