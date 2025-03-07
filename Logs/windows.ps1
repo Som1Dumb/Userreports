@@ -1,7 +1,7 @@
 # Define Output File
 $hostname = $env:COMPUTERNAME
 $date = Get-Date -Format "yyyy-MM-dd"
-$outputFile = "os_log_review_$date.csv"
+$outputFile = "Windows_os_log_review.csv"
 
 Write-Host "Starting log review script on $hostname..."
 Write-Host "Output file: $outputFile"
