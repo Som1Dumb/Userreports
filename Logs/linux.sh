@@ -39,12 +39,9 @@ get_sudo_usage() {
     grep -i "sudo" "$LOG_FILE" | while read -r line; do
         DATE=$(echo "$line" | awk '{print $1, $2, $3}')
         USERNAME=$(echo "$line" | grep -oP '(?<=user=)\S+' || echo "UNKNOWN")
-        COMMAND=$(echo "$line" | sed -n 's/.*sudo //p')  # Extracts everything after "sudo"
 
-        # If no command found, set "UNKNOWN"
-        if [[ -z "$COMMAND" ]]; then
-            COMMAND="UNKNOWN"
-        fi
+        # Extract everything after "sudo", otherwise return the full line
+        COMMAND=$(echo "$line" | awk -F'sudo ' '{if (NF>1) print $2; else print $0}')
 
         echo "$HOSTNAME,$DATE,$USERNAME,N/A,SUDO_USAGE,\"$COMMAND\"" >> "$OUTPUT_CSV"
     done
@@ -57,12 +54,9 @@ get_runas_usage() {
     grep -i "runuser" "$LOG_FILE" | while read -r line; do
         DATE=$(echo "$line" | awk '{print $1, $2, $3}')
         USERNAME=$(echo "$line" | grep -oP '(?<=user )\S+' || echo "UNKNOWN")
-        COMMAND=$(echo "$line" | sed -n 's/.*runuser //p')  # Extracts everything after "runuser"
-
-        # If no command found, set "UNKNOWN"
-        if [[ -z "$COMMAND" ]]; then
-            COMMAND="UNKNOWN"
-        fi
+        
+        # Extract everything after "runuser", otherwise return the full line
+        COMMAND=$(echo "$line" | awk -F'runuser ' '{if (NF>1) print $2; else print $0}')
 
         echo "$HOSTNAME,$DATE,$USERNAME,N/A,RUNAS_COMMAND,\"$COMMAND\"" >> "$OUTPUT_CSV"
     done
