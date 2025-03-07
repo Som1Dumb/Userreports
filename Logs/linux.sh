@@ -39,8 +39,8 @@ get_sudo_usage() {
     grep -i "sudo:" "$LOG_FILE" | while read -r line; do
         DATE=$(echo "$line" | awk '{print $1, $2, $3}')
         USERNAME=$(echo "$line" | grep -oP '(?<=user=)\S+')
-        COMMAND=$(echo "$line" | awk -F'COMMAND=' '{print $2}')
-        
+        COMMAND=$(echo "$line" | sed -n 's/.*sudo: //p')  # Extracts everything after "sudo:"
+
         # If no command found, set "UNKNOWN"
         if [[ -z "$COMMAND" ]]; then
             COMMAND="UNKNOWN"
@@ -57,7 +57,7 @@ get_runas_usage() {
     grep -i "runuser" "$LOG_FILE" | while read -r line; do
         DATE=$(echo "$line" | awk '{print $1, $2, $3}')
         USERNAME=$(echo "$line" | grep -oP '(?<=user )\S+')
-        COMMAND=$(echo "$line" | awk -F'command: ' '{print $2}')
+        COMMAND=$(echo "$line" | sed -n 's/.*command: //p')  # Extracts everything after "command:"
 
         # If no command found, set "UNKNOWN"
         if [[ -z "$COMMAND" ]]; then
