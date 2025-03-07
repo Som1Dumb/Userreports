@@ -28,8 +28,14 @@ SELECT
     TO_CHAR(u.created, 'YYYY-MM-DD HH24:MI:SS') AS Created_Date,
     u.initial_rsrc_consumer_group AS Resource_Group,
     NVL(TO_CHAR(s.logon_time, 'YYYY-MM-DD HH24:MI:SS'), 'N/A') AS Last_Login_Time,
-    LISTAGG(r.granted_role, '; ') WITHIN GROUP (ORDER BY r.granted_role) AS User_Roles,
-    LISTAGG(p.privilege, '; ') WITHIN GROUP (ORDER BY p.privilege) AS User_Privileges
+    
+    -- Fix LISTAGG overflow issue by truncating long strings
+    LISTAGG(r.granted_role, '; ') WITHIN GROUP (ORDER BY r.granted_role) 
+        ON OVERFLOW TRUNCATE '... (truncated)' AS User_Roles,
+    
+    LISTAGG(p.privilege, '; ') WITHIN GROUP (ORDER BY p.privilege) 
+        ON OVERFLOW TRUNCATE '... (truncated)' AS User_Privileges
+
 FROM dba_users u
 LEFT JOIN dba_role_privs r ON u.username = r.grantee
 LEFT JOIN dba_sys_privs p ON u.username = p.grantee
