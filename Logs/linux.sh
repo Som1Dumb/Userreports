@@ -3,7 +3,7 @@
 # Variables
 HOSTNAME=$(hostname)
 LOG_FILE="/var/log/auth.log"  # Default for Debian/Ubuntu; changes dynamically for RHEL
-OUTPUT_CSV="$(pwd)/os_log_review_$(date +%Y-%m-%d).csv"
+OUTPUT_CSV="$(pwd)/os_log_review.csv"
 
 # Function to detect OS and set the correct log file
 detect_os() {
