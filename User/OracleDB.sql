@@ -6,8 +6,9 @@ SET TERMOUT ON
 SET FEEDBACK OFF
 SET COLSEP ','
 
--- Define the directory where the file should be saved (Modify as needed)
-DEFINE FILENAME = 'Linux_OracleDB_SOX.csv'  -- Static filename
+-- Define the file name correctly for SQL*Plus
+COLUMN filename NEW_VALUE FILENAME
+SELECT 'Linux_OracleDB_SOX.csv' AS filename FROM dual;
 
 -- Show the file path before spooling
 PROMPT Exporting data to &FILENAME
@@ -28,8 +29,8 @@ SELECT
     TO_CHAR(u.created, 'YYYY-MM-DD HH24:MI:SS') AS Created_Date,
     u.initial_rsrc_consumer_group AS Resource_Group,
     NVL(TO_CHAR(s.logon_time, 'YYYY-MM-DD HH24:MI:SS'), 'N/A') AS Last_Login_Time,
-    
-    -- Fix for ORA-01489: Avoids LISTAGG exceeding 4000 characters
+
+    -- Prevent ORA-01489 error by truncating long strings
     LISTAGG(r.granted_role, '; ') WITHIN GROUP (ORDER BY r.granted_role) 
         ON OVERFLOW TRUNCATE '...' AS User_Roles,
     
