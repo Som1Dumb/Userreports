@@ -5,10 +5,10 @@ SET TRIMSPOOL ON
 SET TERMOUT ON
 SET FEEDBACK OFF
 SET COLSEP ','
-SET LONG 100000  -- Allow long CLOB outputs for XMLAGG
+SET LONG 100000  -- Allows large outputs for XMLAGG (CLOB format)
 
--- Define the directory where the file should be saved (Modify as needed)
-DEFINE FILENAME = 'Linux_OracleDB_SOX.csv'  -- Static filename
+-- Define filename (Ensure no extra spaces in file name)
+DEFINE FILENAME = 'Linux_OracleDB_SOX.csv'
 
 -- Show the file path before spooling
 PROMPT Exporting data to &FILENAME
@@ -30,11 +30,12 @@ SELECT
     u.initial_rsrc_consumer_group AS Resource_Group,
     NVL(TO_CHAR(s.logon_time, 'YYYY-MM-DD HH24:MI:SS'), 'N/A') AS Last_Login_Time,
 
-    -- Using XMLAGG to handle long lists without ORA-01489
-    (SELECT RTRIM(XMLAGG(XMLELEMENT(e, r.granted_role || '; ') ORDER BY r.granted_role).EXTRACT('//text()'), '; ') 
+    -- Handling long role lists with XMLAGG
+    (SELECT RTRIM(XMLAGG(XMLELEMENT(e, r.granted_role || '; ') ORDER BY r.granted_role).EXTRACT('//text()'), '; ')
      FROM dba_role_privs r WHERE r.grantee = u.username) AS User_Roles,
 
-    (SELECT RTRIM(XMLAGG(XMLELEMENT(e, p.privilege || '; ') ORDER BY p.privilege).EXTRACT('//text()'), '; ') 
+    -- Handling long privilege lists with XMLAGG
+    (SELECT RTRIM(XMLAGG(XMLELEMENT(e, p.privilege || '; ') ORDER BY p.privilege).EXTRACT('//text()'), '; ')
      FROM dba_sys_privs p WHERE p.grantee = u.username) AS User_Privileges
 
 FROM dba_users u
