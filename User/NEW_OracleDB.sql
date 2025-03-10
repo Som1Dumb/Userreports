@@ -1,7 +1,7 @@
 -- Set environment for SQL*Plus
 SET HEADING OFF
 SET FEEDBACK OFF
-SET LINESIZE 200
+SET LINESIZE 300
 SET PAGESIZE 0
 SET TERMOUT OFF
 SET TRIMSPOOL ON
@@ -18,11 +18,16 @@ SELECT SYS_CONTEXT('USERENV', 'HOST') AS host_name FROM DUAL;
 SPOOL users_list.csv
 
 -- Print CSV headers
-PROMPT "hostname, date, username, sid"
+PROMPT "hostname, date, username, sid, last_login_date, last_login_time"
 
--- Fetch users and SID
-SELECT '"' || '&host_str' || '", "' || '&date_str' || '", "' || s.USERNAME || '", "' || s.SID || '"'
+-- Fetch users, SID, and last login info
+SELECT '"' || '&host_str' || '", "' || '&date_str' || '", "' 
+       || s.USERNAME || '", "' 
+       || s.SID || '", "' 
+       || TO_CHAR(u.LAST_LOGIN, 'YYYY-MM-DD') || '", "' 
+       || TO_CHAR(u.LAST_LOGIN, 'HH24:MI:SS') || '"'
 FROM V$SESSION s
+JOIN DBA_USERS u ON s.USERNAME = u.USERNAME
 WHERE s.USERNAME IS NOT NULL
 ORDER BY s.USERNAME, s.SID;
 
