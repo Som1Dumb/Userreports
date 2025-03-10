@@ -6,9 +6,8 @@ SET TERMOUT ON
 SET FEEDBACK OFF
 SET COLSEP ','
 
--- Define the file name correctly for SQL*Plus
-COLUMN filename NEW_VALUE FILENAME
-SELECT 'Linux_OracleDB_SOX.csv' AS filename FROM dual;
+-- Define the directory where the file should be saved (Modify as needed)
+DEFINE FILENAME = 'Linux_OracleDB_SOX.csv'  -- Static filename
 
 -- Show the file path before spooling
 PROMPT Exporting data to &FILENAME
@@ -30,12 +29,9 @@ SELECT
     u.initial_rsrc_consumer_group AS Resource_Group,
     NVL(TO_CHAR(s.logon_time, 'YYYY-MM-DD HH24:MI:SS'), 'N/A') AS Last_Login_Time,
 
-    -- Prevent ORA-01489 error by truncating long strings
-    LISTAGG(r.granted_role, '; ') WITHIN GROUP (ORDER BY r.granted_role) 
-        ON OVERFLOW TRUNCATE '...' AS User_Roles,
-    
-    LISTAGG(p.privilege, '; ') WITHIN GROUP (ORDER BY p.privilege) 
-        ON OVERFLOW TRUNCATE '...' AS User_Privileges
+    -- Using XMLAGG instead of LISTAGG to handle long strings
+    RTRIM(XMLAGG(XMLELEMENT(e, r.granted_role || '; ') ORDER BY r.granted_role).EXTRACT('//text()'), '; ') AS User_Roles,
+    RTRIM(XMLAGG(XMLELEMENT(e, p.privilege || '; ') ORDER BY p.privilege).EXTRACT('//text()'), '; ') AS User_Privileges
 
 FROM dba_users u
 LEFT JOIN dba_role_privs r ON u.username = r.grantee
