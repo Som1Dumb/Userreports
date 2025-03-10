@@ -5,6 +5,7 @@ SET TRIMSPOOL ON
 SET TERMOUT ON
 SET FEEDBACK OFF
 SET COLSEP ','
+SET LONG 100000  -- Allow long CLOB outputs for XMLAGG
 
 -- Define the directory where the file should be saved (Modify as needed)
 DEFINE FILENAME = 'Linux_OracleDB_SOX.csv'  -- Static filename
@@ -29,18 +30,15 @@ SELECT
     u.initial_rsrc_consumer_group AS Resource_Group,
     NVL(TO_CHAR(s.logon_time, 'YYYY-MM-DD HH24:MI:SS'), 'N/A') AS Last_Login_Time,
 
-    -- Using XMLAGG instead of LISTAGG to handle long strings
-    RTRIM(XMLAGG(XMLELEMENT(e, r.granted_role || '; ') ORDER BY r.granted_role).EXTRACT('//text()'), '; ') AS User_Roles,
-    RTRIM(XMLAGG(XMLELEMENT(e, p.privilege || '; ') ORDER BY p.privilege).EXTRACT('//text()'), '; ') AS User_Privileges
+    -- Using XMLAGG to handle long lists without ORA-01489
+    (SELECT RTRIM(XMLAGG(XMLELEMENT(e, r.granted_role || '; ') ORDER BY r.granted_role).EXTRACT('//text()'), '; ') 
+     FROM dba_role_privs r WHERE r.grantee = u.username) AS User_Roles,
+
+    (SELECT RTRIM(XMLAGG(XMLELEMENT(e, p.privilege || '; ') ORDER BY p.privilege).EXTRACT('//text()'), '; ') 
+     FROM dba_sys_privs p WHERE p.grantee = u.username) AS User_Privileges
 
 FROM dba_users u
-LEFT JOIN dba_role_privs r ON u.username = r.grantee
-LEFT JOIN dba_sys_privs p ON u.username = p.grantee
 LEFT JOIN v$session s ON u.username = s.username
-
-GROUP BY SYS_CONTEXT('USERENV', 'HOST'), u.username, u.user_id, u.account_status, 
-         u.lock_date, u.expiry_date, u.profile, u.default_tablespace, u.created, 
-         u.initial_rsrc_consumer_group, s.logon_time
 
 ORDER BY u.username;
 
