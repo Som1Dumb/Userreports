@@ -17,13 +17,14 @@ SELECT SYS_CONTEXT('USERENV', 'HOST') AS host_name FROM DUAL;
 -- Define the CSV file name
 SPOOL users_list.csv
 
--- Print headers
-PROMPT "hostname, date, username"
+-- Print CSV headers
+PROMPT "hostname, date, username, sid"
 
--- Fetch data from DBA_USERS
-SELECT '"' || '&host_str' || '", "' || '&date_str' || '", "' || USERNAME || '"'
-FROM DBA_USERS
-ORDER BY USERNAME;
+-- Fetch users and SID
+SELECT '"' || '&host_str' || '", "' || '&date_str' || '", "' || s.USERNAME || '", "' || s.SID || '"'
+FROM V$SESSION s
+WHERE s.USERNAME IS NOT NULL
+ORDER BY s.USERNAME, s.SID;
 
 -- Stop spooling
 SPOOL OFF
