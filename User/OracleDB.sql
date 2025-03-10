@@ -7,7 +7,6 @@ SET FEEDBACK OFF
 SET COLSEP ','
 
 -- Define the directory where the file should be saved (Modify as needed)
-DEFINE FILEPATH = '/reports_tst/'  -- Change this to your desired location
 DEFINE FILENAME = 'Linux_OracleDB_SOX.csv'  -- Static filename
 
 -- Show the file path before spooling
@@ -29,18 +28,14 @@ SELECT
     TO_CHAR(u.created, 'YYYY-MM-DD HH24:MI:SS') AS Created_Date,
     u.initial_rsrc_consumer_group AS Resource_Group,
     NVL(TO_CHAR(s.logon_time, 'YYYY-MM-DD HH24:MI:SS'), 'N/A') AS Last_Login_Time,
-
-    -- Using subquery for Roles (avoiding LEFT JOIN issues in SQL*Plus)
-    (SELECT LISTAGG(r.granted_role, '; ') WITHIN GROUP (ORDER BY r.granted_role) 
-     FROM dba_role_privs r WHERE r.grantee = u.username) AS User_Roles,
-
-    -- Using XMLAGG for Privileges to avoid ORA-01489 error
-    (SELECT RTRIM(XMLAGG(XMLELEMENT(e, p.privilege || '; ')).EXTRACT('//text()'), ';') 
-     FROM dba_sys_privs p WHERE p.grantee = u.username) AS User_Privileges
-
-FROM dba_users u,
-     v$session s  -- Legacy join syntax (SQL*Plus does not support ANSI JOIN)
-WHERE u.username = s.username(+)
+    LISTAGG(r.granted_role, '; ') WITHIN GROUP (ORDER BY r.granted_role) AS User_Roles,
+    LISTAGG(p.privilege, '; ') WITHIN GROUP (ORDER BY p.privilege) AS User_Privileges
+FROM dba_users u
+LEFT JOIN dba_role_privs r ON u.username = r.grantee
+LEFT JOIN dba_sys_privs p ON u.username = p.grantee
+LEFT JOIN v$session s ON u.username = s.username
+GROUP BY SYS_CONTEXT('USERENV', 'HOST'), u.username, u.user_id, u.account_status, u.lock_date, 
+         u.expiry_date, u.profile, u.default_tablespace, u.created, u.initial_rsrc_consumer_group, s.logon_time
 ORDER BY u.username;
 
 -- Stop Writing to CSV
